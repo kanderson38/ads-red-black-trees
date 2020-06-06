@@ -1,8 +1,8 @@
-import RedBlackTree from '../red_black_tree';
-import { RBTNode } from '../red_black_tree';
+import RedBlackTree from "../red_black_tree";
+import { RBTNode } from "../red_black_tree";
 
-import seedrandom from 'seedrandom';
-import { performance } from 'perf_hooks';
+import seedrandom from "seedrandom";
+import { performance } from "perf_hooks";
 
 // This file contains tests specific to RedBlackTree
 // RedBlackTree is also covered by the generic
@@ -14,8 +14,7 @@ describe(RedBlackTree, () => {
     rbTree = new RedBlackTree();
   });
 
-  describe('RB properties', () => {
-
+  describe("RB properties", () => {
     const rbTreeIntrospect = (tree, callback) => {
       // Similar to the builtin forEach function. Differences:
       // - Invokes the callback on the node instead of just the k/v pair
@@ -37,9 +36,9 @@ describe(RedBlackTree, () => {
         }
 
         return i;
-      }
+      };
       visit(tree._root, callback);
-    }
+    };
 
     /* eslint jest/expect-expect: ["error", { "assertFunctionNames": ["expect", "verifyRbTreeProperties"] }] */
     const verifyRbTreeProperties = (tree, debug = false) => {
@@ -47,7 +46,7 @@ describe(RedBlackTree, () => {
         if (debug) {
           console.log(args);
         }
-      }
+      };
 
       if (!tree._root) {
         return;
@@ -60,7 +59,9 @@ describe(RedBlackTree, () => {
       const doubleRedParents = [];
 
       rbTreeIntrospect(tree, (node, _, blackDepth) => {
-        log(`Visiting node with key ${node.key}, color ${node.color}, blackDepth ${node.blackDepth}`);
+        log(
+          `Visiting node with key ${node.key}, color ${node.color}, blackDepth ${node.blackDepth}`
+        );
         // All leaf nodes must have the same depth
         if (node === RBTNode.sentinel) {
           leafBlackDepths.push(blackDepth);
@@ -68,8 +69,10 @@ describe(RedBlackTree, () => {
 
         // If a node is red, then both of its children must be black
         if (node.color === RBTNode.RED) {
-          if (node.left.color !== RBTNode.BLACK ||
-            node.right.color !== RBTNode.BLACK) {
+          if (
+            node.left.color !== RBTNode.BLACK ||
+            node.right.color !== RBTNode.BLACK
+          ) {
             doubleRedParents.push(node);
           }
         }
@@ -78,42 +81,45 @@ describe(RedBlackTree, () => {
       expect(doubleRedParents.length).toBe(0);
 
       const uniqueLBDs = leafBlackDepths.filter(
-        (v, i, a) => a.indexOf(v) === i);
-      expect(uniqueLBDs.length,
-        "Got different depths for sentinel leaves").toBe(1);
-    }
+        (v, i, a) => a.indexOf(v) === i
+      );
+      expect(
+        uniqueLBDs.length,
+        "Got different depths for sentinel leaves"
+      ).toBe(1);
+    };
 
-    it('maintains properties on an empty tree', () => {
+    it("maintains properties on an empty tree", () => {
       verifyRbTreeProperties(rbTree);
     });
 
-    it('maintains properties after one insert', () => {
-      rbTree.insert('test');
+    it("maintains properties after one insert", () => {
+      rbTree.insert("test");
       verifyRbTreeProperties(rbTree);
     });
 
-    it('maintains properties after several inserts in random order', () => {
-      const keys = ['one', 'two', 'three', 'four', 'five'];
-      keys.forEach(key => rbTree.insert(key));
+    it("maintains properties after several inserts in random order", () => {
+      const keys = ["one", "two", "three", "four", "five"];
+      keys.forEach((key) => rbTree.insert(key));
       verifyRbTreeProperties(rbTree);
     });
 
-    it('maintains properties after several inserts in order', () => {
-      const keys = ['one', 'two', 'three', 'four', 'five'].sort();
-      keys.forEach(key => rbTree.insert(key));
+    it("maintains properties after several inserts in order", () => {
+      const keys = ["one", "two", "three", "four", "five"].sort();
+      keys.forEach((key) => rbTree.insert(key));
       verifyRbTreeProperties(rbTree);
     });
 
-    it('maintains properties after several inserts in reverse order', () => {
-      const keys = ['one', 'two', 'three', 'four', 'five'].sort().reverse();
-      keys.forEach(key => rbTree.insert(key));
+    it("maintains properties after several inserts in reverse order", () => {
+      const keys = ["one", "two", "three", "four", "five"].sort().reverse();
+      keys.forEach((key) => rbTree.insert(key));
       verifyRbTreeProperties(rbTree);
     });
 
     const BIG_RUN_SIZE = 1000;
 
-    it('maintains properties after many inserts in random order', () => {
-      const rng = seedrandom('adadev');
+    it("maintains properties after many inserts in random order", () => {
+      const rng = seedrandom("adadev");
       for (let i = 0; i < BIG_RUN_SIZE; i += 1) {
         const key = Math.floor(rng() * 2 * BIG_RUN_SIZE) + 1;
         rbTree.insert(key, i);
@@ -121,14 +127,14 @@ describe(RedBlackTree, () => {
       verifyRbTreeProperties(rbTree);
     });
 
-    it('maintains properties after many inserts in order', () => {
+    it("maintains properties after many inserts in order", () => {
       for (let i = 1; i <= BIG_RUN_SIZE; i += 1) {
         rbTree.insert(i);
       }
       verifyRbTreeProperties(rbTree);
     });
 
-    it('maintains properties after many inserts in reverse order', () => {
+    it("maintains properties after many inserts in reverse order", () => {
       for (let i = BIG_RUN_SIZE; i > 0; i -= 1) {
         rbTree.insert(i);
       }
@@ -136,35 +142,35 @@ describe(RedBlackTree, () => {
     });
   });
 
-  describe('rotations', () => {
+  describe("rotations", () => {
     /**
      * Dear Reader,
-     * 
+     *
      * The following is some of the jankiest, monkey-patchey-est code
      * I've ever had the displeasure of writing. While I believe that
      * the ends justify the means, I am in no way proud of what I've
      * done here today.
-     * 
+     *
      * The basic idea is that, to test rotations, we need to have a tree
      * already in place. Since the whole point of RB Trees is to move nodes
      * around, we can't just insert a bunch and call it a day like we could
      * with a BST. So we mock up the internal node structure of the tree,
      * patch it in, call the rotate function, and see what it did.
-     * 
+     *
      * Unfortunately there's a lot of extra overhead involved. In particular,
      * we have to build sentinel and parent links for the mock trees
      * before giving them to the RBTree class, and then unlink them before
      * comparing them to our expected results. This test suite practically
      * needs a test suite!
-     * 
+     *
      * What's worse, writing trees in JSON doesn't make it visually obvious
      * that the structure is correct. You'll just have to trust that I
      * transcribed them correctly from pencil and paper.
-     * 
+     *
      * "But wait" you say, pointing excitedly at chapter 9 of POODR, "rotation
      * isn't part of the RBTree's interface! You're breaking encapsulation,
      * writing brittle tests with high cost and low value."
-     * 
+     *
      * If we were talking about a production data structure, you would be
      * spot on. We'd test the complete data structure for consistency,
      * benchmark it in known pathological conditions, and call it good.
@@ -172,52 +178,52 @@ describe(RedBlackTree, () => {
      * the student-customer incomplete. Rotation is part of what students
      * are given, and that means we need high confidence that it works
      * independently of any other operation.
-     * 
+     *
      * If you're a student, you can pretty much skip this bit.
      * If you're another instructor who has to maintain this... good luck.
-     * 
+     *
      * Sincerely,
      * DPR
      */
     const mockTrees = Object.freeze({
       balanced: {
-        key: 'd',
+        key: "d",
         left: {
-          key: 'b',
-          left: { key: 'a' },
-          right: { key: 'c' },
+          key: "b",
+          left: { key: "a" },
+          right: { key: "c" },
         },
         right: {
-          key: 'f',
-          left: { key: 'e' },
-          right: { key: 'g' },
+          key: "f",
+          left: { key: "e" },
+          right: { key: "g" },
         },
       },
       rightSpine: {
-        key: 'a',
+        key: "a",
         right: {
-          key: 'b',
+          key: "b",
           right: {
-            key: 'c',
-            right: { key: 'd' }
-          }
-        }
+            key: "c",
+            right: { key: "d" },
+          },
+        },
       },
       leftSpine: {
-        key: 'a',
+        key: "a",
         left: {
-          key: 'b',
+          key: "b",
           left: {
-            key: 'c',
-            left: { key: 'd' }
-          }
-        }
-      }
+            key: "c",
+            left: { key: "d" },
+          },
+        },
+      },
     });
 
     const deepCopy = (obj) => {
-      return JSON.parse(JSON.stringify(obj))
-    }
+      return JSON.parse(JSON.stringify(obj));
+    };
 
     const linkTree = (tree) => {
       const linkNode = (node, parent) => {
@@ -237,9 +243,9 @@ describe(RedBlackTree, () => {
           node.parent = parent;
         }
         return node;
-      }
+      };
       return linkNode(deepCopy(tree), RBTNode.sentinel);
-    }
+    };
 
     /* eslint jest/expect-expect: ["error", { "assertFunctionNames": ["expect", "checkTreeLinks", "checkEqualStructure"] }] */
     const checkTreeLinks = (tree) => {
@@ -251,18 +257,17 @@ describe(RedBlackTree, () => {
         if (node.left !== RBTNode.sentinel) {
           expect(node.left).toBeDefined();
           expect(visited).not.toContain(node.left);
-          checkNodeLinks(node.left, node)
+          checkNodeLinks(node.left, node);
         }
 
         if (node.right !== RBTNode.sentinel) {
           expect(node.right).toBeDefined();
           expect(visited).not.toContain(node.right);
-          checkNodeLinks(node.right, node)
+          checkNodeLinks(node.right, node);
         }
-      }
+      };
       checkNodeLinks(tree);
-    }
-
+    };
 
     const checkEqualStructure = (oak, pine) => {
       const unlinkNode = (node) => {
@@ -277,41 +282,41 @@ describe(RedBlackTree, () => {
         } else if (node.right) {
           unlinkNode(node.right);
         }
-      }
+      };
       unlinkNode(oak);
       unlinkNode(pine);
       expect(oak).toStrictEqual(pine);
-    }
+    };
 
-    describe('left', () => {
-      it('correctly rotates the root left', () => {
+    describe("left", () => {
+      it("correctly rotates the root left", () => {
         const expectedStructure = {
-          key: 'f',
+          key: "f",
           left: {
-            key: 'd',
+            key: "d",
             left: mockTrees.balanced.left,
-            right: { key: 'e' },
+            right: { key: "e" },
           },
-          right: { key: 'g' },
+          right: { key: "g" },
         };
         rbTree._root = linkTree(mockTrees.balanced);
         rbTree._rotateLeft(rbTree._root);
 
-        expect(rbTree._root.key).toBe('f');
+        expect(rbTree._root.key).toBe("f");
         checkTreeLinks(rbTree._root);
         checkEqualStructure(rbTree._root, expectedStructure);
       });
 
-      it('correctly rotates a non-root node left', () => {
+      it("correctly rotates a non-root node left", () => {
         const expectedStructure = {
           ...mockTrees.balanced,
           left: {
-            key: 'c',
+            key: "c",
             left: {
-              key: 'b',
-              left: { key: 'a' }
-            }
-          }
+              key: "b",
+              left: { key: "a" },
+            },
+          },
         };
         rbTree._root = linkTree(mockTrees.balanced);
         rbTree._rotateLeft(rbTree._root.left);
@@ -320,10 +325,10 @@ describe(RedBlackTree, () => {
         checkEqualStructure(rbTree._root, expectedStructure);
       });
 
-      it('correctly rotates a node with a sentinel as left child', () => {
+      it("correctly rotates a node with a sentinel as left child", () => {
         const expectedStructure = {
-          key: 'b',
-          left: { key: 'a' },
+          key: "b",
+          left: { key: "a" },
           right: mockTrees.rightSpine.right.right,
         };
         rbTree._root = linkTree(mockTrees.rightSpine);
@@ -344,35 +349,35 @@ describe(RedBlackTree, () => {
       });
     });
 
-    describe('right', () => {
-      it('correctly rotates the root right', () => {
+    describe("right", () => {
+      it("correctly rotates the root right", () => {
         const expectedStructure = {
-          key: 'b',
-          left: { key: 'a' },
+          key: "b",
+          left: { key: "a" },
           right: {
-            key: 'd',
-            left: { key: 'c' },
+            key: "d",
+            left: { key: "c" },
             right: mockTrees.balanced.right,
           },
         };
         rbTree._root = linkTree(mockTrees.balanced);
         rbTree._rotateRight(rbTree._root);
 
-        expect(rbTree._root.key).toBe('b');
+        expect(rbTree._root.key).toBe("b");
         checkTreeLinks(rbTree._root);
         checkEqualStructure(rbTree._root, expectedStructure);
       });
 
-      it('correctly rotates a non-root node right', () => {
+      it("correctly rotates a non-root node right", () => {
         const expectedStructure = {
           ...mockTrees.balanced,
           left: {
-            key: 'a',
+            key: "a",
             right: {
-              key: 'b',
-              right: { key: 'c' }
-            }
-          }
+              key: "b",
+              right: { key: "c" },
+            },
+          },
         };
         rbTree._root = linkTree(mockTrees.balanced);
         rbTree._rotateRight(rbTree._root.left);
@@ -381,10 +386,10 @@ describe(RedBlackTree, () => {
         checkEqualStructure(rbTree._root, expectedStructure);
       });
 
-      it('correctly rotates a node with a sentinel as right child', () => {
+      it("correctly rotates a node with a sentinel as right child", () => {
         const expectedStructure = {
-          key: 'b',
-          right: { key: 'a' },
+          key: "b",
+          right: { key: "a" },
           left: mockTrees.leftSpine.left.left,
         };
         rbTree._root = linkTree(mockTrees.leftSpine);

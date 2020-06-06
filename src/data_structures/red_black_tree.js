@@ -1,11 +1,13 @@
 // Exported for the tests :(
+import BinarySearchTree from "./binary_search_tree";
 export class RBTNode {
-  static BLACK = 'black';
-  static RED = 'red';
+  static BLACK = "black";
+  static RED = "red";
   static sentinel = Object.freeze({ color: RBTNode.BLACK });
 
   constructor({
-    key, value,
+    key,
+    value,
     color = RBTNode.RED,
     parent = RBTNode.sentinel,
     left = RBTNode.sentinel,
@@ -23,29 +25,45 @@ export class RBTNode {
 class RedBlackTree {
   constructor(Node = RBTNode) {
     this.Node = Node;
+    this.Node = RBTNode.sentinel;
+    this._count = 0;
+    this._root = undefined;
   }
 
   lookup(key) {
-
+    if (!this._root) {
+      return undefined;
+    }
+    let node = this._root;
+    while (node.key) {
+      if (key > node.key) {
+        node = node.right;
+      } else if (key < node.key) {
+        node = node.left;
+      } else {
+        return node.value;
+      }
+    }
+    return undefined;
   }
 
   /**
    * The two rotation functions are symetric, and could presumably
    * be collapsed into one that takes a direction 'left' or 'right',
    * calculates the opposite, and uses [] instead of . to access.
-   * 
+   *
    * Felt too confusing to be worth it. Plus I bet* the JIT optimizes two
    * functions with static lookups better than one with dynamic lookups.
-   * 
+   *
    * (*without any evidence whatsoever, 10 points to anyone who tries it out)
    */
   _rotateLeft(node) {
     const child = node.right;
 
     if (node === RBTNode.sentinel) {
-      throw new Error('Cannot rotate a sentinel node');
+      throw new Error("Cannot rotate a sentinel node");
     } else if (child === RBTNode.sentinel) {
-      throw new Error('Cannot rotate away from a sentinal node');
+      throw new Error("Cannot rotate away from a sentinel node");
     }
 
     // turn child's left subtree into node's right subtree
@@ -76,9 +94,9 @@ class RedBlackTree {
     const child = node.left;
 
     if (node === RBTNode.sentinel) {
-      throw new Error('Cannot rotate a sentinel node');
+      throw new Error("Cannot rotate a sentinel node");
     } else if (child === RBTNode.sentinel) {
-      throw new Error('Cannot rotate away from a sentinal node');
+      throw new Error("Cannot rotate away from a sentinel node");
     }
 
     // turn child's right subtree into node's left subtree
@@ -102,29 +120,73 @@ class RedBlackTree {
     node.parent = child;
   }
 
-  _insertInternal(key, value) {
+  _insertInternal(key, value = true) {
+    let newNode;
+    let node = this._root;
+    newNode = new RBTNode({
+      key,
+      value,
+      color: RBTNode.BLACK,
+    });
+
+    if (!node) {
+      this._root = newNode;
+      this._count += 1;
+      return;
+    }
+
+    let parent = node.parent;
+    while (node.key) {
+      if (key < node.key) {
+        parent = node;
+        node = node.left;
+      } else if (key > node.key) {
+        parent = node;
+        node = node.right;
+      } else {
+        node.value = value;
+        return;
+      }
+    }
+    newNode = new RBTNode({
+      key,
+      value,
+      parent,
+    });
+
+    this._count += 1;
+
+    if (newNode.key < parent.key) {
+      parent.left = newNode;
+      return;
+    }
+    parent.right = newNode;
   }
 
-  _insertRebalance(node) {
-  }
+  _insertRebalance(node) {}
 
   insert(key, value) {
     const node = this._insertInternal(key, value);
     this._insertRebalance(node);
   }
 
-  delete(key) {
-
-  }
+  delete(key) {}
 
   count() {
-
+    return this._count;
   }
 
   forEach(callback) {
-    
+    const visitSubtree = (node, callback, i = 0) => {
+      if (node && node.key) {
+        i = visitSubtree(node.left, callback, i);
+        callback({ key: node.key, value: node.value }, i, this);
+        i = visitSubtree(node.right, callback, i + 1);
+      }
+      return i;
+    };
+    visitSubtree(this._root, callback);
   }
 }
-
 
 export default RedBlackTree;
